@@ -1,0 +1,190 @@
+Resources:
+  # DynamoDB Table
+  DynamoDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: jitto-database
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  # Lambda Function 1
+  GetRequest:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt APIOwner.Arn
+      FunctionName: jitto-database-get
+      Runtime: python3.10
+
+  # Lambda Execution Role 1
+  APIOwner:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+        Policies:
+            - PolicyName: LambdaPolicy1
+            PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                    - Effect: Allow
+                    Action:
+                    - dynamodb:Query
+                    - dynamodb:Scan
+                    - dynamodb:GetItem
+                    - dynamodb:PutItem
+                    - dynamodb:UpdateItem
+                    - dynamodb:DeleteItem
+                Resource: !GetAtt DynamoDB.Arn
+
+  # Lambda Function 2
+  PostRequest:
+    Type: AWS::Lambda::Function
+    Properties:
+        Handler: index.handler
+        Role: !GetAtt APIOwner.Arn
+        FunctionName: jitto-database
+        Runtime: python3.10
+
+  # API Gateway
+  JittoAPIGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+        Name: jitto-database-api
+
+  # API Gateway Resource
+  JittoAPI:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+        RestApiId: !Ref JittoAPIGateway
+        ParentId: !GetAtt JittoAPIGateway.RootResourceId
+        PathPart: '{proxy+}'
+
+  # API Gateway Method for Lambda 1
+  PostInsert:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !GetAtt JittoAPI.Id
+      RestApiId: !Ref JittoAPIGateway
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+          - LambdaArn: !GetAtt PostRequest.Arn
+      MethodResponses:
+        - StatusCode: 200
+
+  # API Gateway Method for Lambda 2
+  GetData:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      ResourceId: !GetAtt JittoAPI.Id
+      RestApiId: !Ref JittoAPIGateway
+      Integration:
+        IntegrationHttpMethod: GET
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+          - LambdaArn: !GetAtt GetRequest.Arn
+      MethodResponses:
+        - StatusCode: 200
+
+  # API Key
+  JittoAPIKey:
+    Type: "AWS::ApiGateway::ApiKey"
+
+  # API Key to Usage Plan
+  JittoAPIUsagePlan:
+    Type: "AWS::ApiGateway::UsagePlan"
+    Properties:
+      ApiStages:
+        - ApiId: !Ref JittoAPIGateway
+          Stage: "prod"
+      Description: "My API Usage Plan"
+      Quota:
+        Limit: 5000
+        Offset: 2
+        Period: "MONTH"
+      Throttle:
+        BurstLimit: 100
+        RateLimit: 50
+
+  # Attach the Usage Plan to the API Key
+  JittoAPIUsagePlanKey:
+    Type: "AWS::ApiGateway::UsagePlanKey"
+    Properties:
+      KeyId: !Ref JittoAPIKey
+      KeyType: "API_KEY"
+      UsagePlanId: !Ref JittoAPIUsagePlan
+
+  # Create a method that uses API Key authorization
+  APIKeyAuth:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: "API_KEY"
+      RestApiId: !Ref JittoAPIGateway
+      ResourceId: !GetAtt JittoAPI.Id
+      HttpMethod: "POST"
+
+  # Attach the API Key to the method
+  APIKeyMethodPost:
+    Type: "AWS::ApiGateway::MethodApiKey"
+    Properties:
+      ApiKey: !Ref Jitto
+      ResourceId: !GetAtt JittoAPI.Id
+      HttpMethod: "POST"
+      RestApiId: !Ref JittoAPIGateway
+  
+  APIKeyMethodGet:
+    Type: "AWS::ApiGateway::MethodApiKey"
+    Properties:
+      ApiKey: !Ref Jitto
+      ResourceId: !GetAtt JittoAPI.Id
+      HttpMethod: "GET"
+      RestApiId: !Ref JittoAPIGateway
+
+  # Attach the Log Group to the API Gateway Stage
+  JittoAPILogger:
+    Type: "AWS::ApiGateway::Stage"
+    Properties:
+      RestApiId: !Ref JittoAPIGateway
+      StageName: "prod"
+      DeploymentId: !Ref prod
+      MethodSettings:
+        - HttpMethod: "*"
+          ResourcePath: "/*"
+          LoggingLevel: "INFO"
+      AccessLogSetting:
+        DestinationArn: !GetAtt JittoAPILogGroup.Arn
+        Format: '$context.identity.sourceIp - - [$context.requestTime] "$context.httpMethod $context.resourcePath $context.protocol" $context.status $context.responseLength $context.requestId'
+
+Outputs:
+  # API Gateway Invoke URL
+  ApiGatewayInvokeURL:
+    Description: "Invoke URL for the API Gateway"
+    Value: !Sub "https://${MyApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/"
+
+  ApiKey:
+    Description: "API Key"
+    Value: !Ref MyApiKey
+
+
