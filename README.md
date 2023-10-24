@@ -8,16 +8,15 @@ AWS Lambda, DynamoDB, API Gateway, CloudFormation, CloudWatch
 **__API Information__**  
 DynamoDB is a schemaless structure, so there are no specific fields for data being stored, except for the unique identifier. The key "id" is used to uniquely identify each entry.
 
-**__API Documentation__**  
 The base URL to make requests are:
 `https://kvotk8t3rb.execute-api.us-east-2.amazonaws.com/prod/`
 
-**__Authorization:__**  
+# Authorization:  
 This API requires authorization via an authorized API key. You must include the following headers:
 `"x-api-key": "[token]"`
 where [token] is replaced with a valid API key.
 
-**__Endpoints:__**  
+# Endpoints:  
 **GET** `data`  
 Retrieves all entries of data.
 
