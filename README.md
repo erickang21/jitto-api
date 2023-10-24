@@ -5,11 +5,8 @@ A simple serverless API designed to store and retrieve data in a AWS DynamoDB da
 __Services Used:__  
 AWS Lambda, DynamoDB, API Gateway, CloudFormation, CloudWatch
 
-**__API Information__**  
+**__API Information:__**  
 DynamoDB is a schemaless structure, so there are no specific fields for data being stored, except for the unique identifier. The key "id" is used to uniquely identify each entry.
-
-The base URL to make requests are:
-`https://kvotk8t3rb.execute-api.us-east-2.amazonaws.com/prod/`
 
 # Authorization:  
 This API requires authorization via an authorized API key. You must include the following headers:
@@ -17,6 +14,9 @@ This API requires authorization via an authorized API key. You must include the 
 where [token] is replaced with a valid API key.
 
 # Endpoints:  
+The base URL to make requests are:
+`https://kvotk8t3rb.execute-api.us-east-2.amazonaws.com/prod/`
+
 **GET** `data`  
 Retrieves all entries of data.
 
@@ -77,6 +77,13 @@ If you did not include ID as a string type, this will be returned:
 ```json
 {
     "message": "Required identifier \"id\" is not of type String."
+}
+```
+
+If you used an ID value that wasa already used, this will be returned:
+```json
+{
+    "message": "Required identifier \"id\" already exists."
 }
 ```
 
