@@ -2,26 +2,26 @@
 
 A simple serverless API designed to store and retrieve data in a AWS DynamoDB database.
 
-Services Used: 
+__Services Used:__  
 AWS Lambda, DynamoDB, API Gateway, CloudFormation, CloudWatch
 
-# API Information
+**__API Information__**  
 DynamoDB is a schemaless structure, so there are no specific fields for data being stored, except for the unique identifier. The key "id" is used to uniquely identify each entry.
 
-# API Documentation
+**__API Documentation__**  
 The base URL to make requests are:
 `https://kvotk8t3rb.execute-api.us-east-2.amazonaws.com/prod/`
 
-**__Authorization__**
+**__Authorization:__**  
 This API requires authorization via an authorized API key. You must include the following headers:
 `"x-api-key": "[token]"`
 where [token] is replaced with a valid API key.
 
-**__Endpoints__**
-**GET** `data`
+**__Endpoints:__**  
+**GET** `data`  
 Retrieves all entries of data.
 
-__Response Body:__
+__Response Body:__  
 ```json
 {
    "id":null,
@@ -30,13 +30,13 @@ __Response Body:__
 ```
 where "data" is a list containing all entries in the database.
 
-**GET** `data?id=?`
+**GET** `data?id=?`  
 Retrieves a specific entry of data, with the given ID.
 
-__Query Parameters:__
+__Query Parameters:__  
 (Required) id (str): The ID of the entry you want to retrieve
 
-__Response Body:__
+__Response Body:__  
 ```json
 {
    "id":null,
@@ -45,10 +45,10 @@ __Response Body:__
 ```
 where "entry" is a JSON object containing that entry in the database.
 
-**POST** `insert`
+**POST** `insert`  
 Insert an entry of data. Requires unique ID to be given.
 
-__Sample Request Body (Required):__
+__Sample Request Body (Required):__  
 ```json
 {
     "id": "1",
@@ -57,7 +57,7 @@ __Sample Request Body (Required):__
 }
 ```
 
-__Response Body (Success):__
+__Response Body (Success):__  
 This is what will be returned if the request body is valid.
 ```json
 {
@@ -66,7 +66,7 @@ This is what will be returned if the request body is valid.
 }
 ```
 
-__Response Body (Errors):__
+__Response Body (Errors):__  
 If you forgot to include a valid ID this will be returned:
 ```json
 {
@@ -81,11 +81,11 @@ If you did not include ID as a string type, this will be returned:
 }
 ```
 
-# Errors
+# Errors  
 `400`: Bad request
 `403`: Missing authentication token. Check Authorization instructions for how to include API key.
 
-# Ratelimits
+# Ratelimits  
 Tracked per IP address.
 
 - 1000 requests at a time (burst).
